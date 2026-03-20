@@ -209,7 +209,7 @@
             // 1. 依照幣別計算商品台幣價格 (四捨五入)
             let itemPriceTWD = 0;
             if (currency === 'KRW') {
-                itemPriceTWD = Math.round(price / 43);
+                itemPriceTWD = Math.round(price / 42);
             } else if (currency === 'JPY') {
                 itemPriceTWD = Math.round(price * 0.21);
             }
