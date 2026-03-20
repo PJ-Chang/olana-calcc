@@ -20,8 +20,8 @@
             display: flex;
             gap: 20px;
             width: 100%;
-            max-width: 850px; /* 加寬以容納兩欄 */
-            flex-wrap: wrap; /* 手機版自動換行 */
+            max-width: 850px;
+            flex-wrap: wrap; 
             justify-content: center;
         }
         .calculator, .result { 
@@ -29,8 +29,8 @@
             padding: 30px; 
             border-radius: 12px; 
             box-shadow: 0 8px 16px rgba(0,0,0,0.1); 
-            flex: 1; /* 兩邊等寬 */
-            min-width: 320px; /* 保證手機上不會太窄 */
+            flex: 1; 
+            min-width: 320px; 
             box-sizing: border-box;
         }
         h2, h3 { 
@@ -94,7 +94,7 @@
         
         /* 右側結果區塊調整 */
         .result { 
-            display: block; /* 預設顯示，方便排版 */
+            display: block; 
             min-height: 400px;
             border: 2px solid #3498db;
         }
@@ -102,6 +102,16 @@
         .result.waiting {
             opacity: 0.3;
         }
+
+        /* 👇 新增：0.5秒重新整理的動畫效果 👇 */
+        @keyframes refreshEffect {
+            0% { opacity: 0.3; transform: scale(0.98); background-color: #eaf2f8; }
+            100% { opacity: 1; transform: scale(1); background-color: white; }
+        }
+        .play-refresh {
+            animation: refreshEffect 0.5s ease-out;
+        }
+
         .result p { 
             margin: 15px 0; 
             display: flex;
@@ -112,6 +122,11 @@
             border: 0;
             border-top: 1px dashed #ccc;
             margin: 20px 0;
+        }
+        .cost-price {
+            font-size: 18px;
+            font-weight: bold;
+            color: #2c3e50;
         }
         .total-price {
             font-size: 24px;
@@ -171,17 +186,18 @@
                 <input type="number" id="localShipping" value="60">
             </div>
 
-            <button onclick="calculateTotal()">立即計算總價</button>
+            <button onclick="calculateTotal()" id="calcBtn">立即計算總價</button>
         </div>
 
         <div class="result waiting" id="resultBox">
             <h3>📝 報價明細 (台幣)</h3>
             <p><span>商品折合台幣：</span> <span id="resItemPrice">0 元</span></p>
-            <p><span>代購費：</span> <span id="resServiceFee">0 元</span></p>
             <p><span>國際運費：</span> <span id="resIntlShipping">0 元</span></p>
             <p><span>台灣運費：</span> <span id="resLocalShipping">0 元</span></p>
+            <p><span>利潤：</span> <span id="resServiceFee">0 元</span></p>
             <hr>
-            <p class="total-price"><span>總價格：</span> <span id="resTotal">0 元</span></p>
+            <p class="cost-price"><span>成本：</span> <span id="resCost">0 元</span></p>
+            <p class="total-price"><span>賣價：</span> <span id="resTotal">0 元</span></p>
             <p style="font-size: 12px; color: #95a5a6; justify-content: center;">* 以上金額皆已無條件進位/四捨五入至整數</p>
         </div>
     </div>
@@ -221,19 +237,39 @@
             // 3. 國際運費
             const intlShippingTWD = Math.round(weight * 0.19);
 
-            // 4. 總價
-            const totalTWD = itemPriceTWD + serviceFeeTWD + intlShippingTWD + localShipping;
+            // 4. 計算成本 (商品台幣 + 國際運費 + 台灣運費)
+            const costTWD = itemPriceTWD + intlShippingTWD + localShipping;
+
+            // 5. 計算賣價 (成本 + 代購費)
+            const totalTWD = costTWD + serviceFeeTWD;
 
             // 更新顯示
             document.getElementById('resItemPrice').innerText = itemPriceTWD + ' 元';
             document.getElementById('resServiceFee').innerText = serviceFeeTWD + ' 元';
             document.getElementById('resIntlShipping').innerText = intlShippingTWD + ' 元';
             document.getElementById('resLocalShipping').innerText = localShipping + ' 元';
+            document.getElementById('resCost').innerText = costTWD + ' 元';
             document.getElementById('resTotal').innerText = totalTWD + ' 元';
 
-            // 移除等待狀態的透明度
-            document.getElementById('resultBox').classList.remove('waiting');
+            // 👇 觸發重新整理的動畫效果 👇
+            const resultBox = document.getElementById('resultBox');
+            
+            // 移除原本的 waiting 狀態
+            resultBox.classList.remove('waiting');
+            
+            // 先移除動畫 class，觸發網頁重繪(Reflow)，再加回去，這樣每次按 Enter 都會重新播放動畫
+            resultBox.classList.remove('play-refresh');
+            void resultBox.offsetWidth; // 觸發重繪的魔法指令
+            resultBox.classList.add('play-refresh');
         }
+
+        // 監聽全域鍵盤事件，按下 Enter 鍵就執行計算
+        document.addEventListener('keydown', function(event) {
+            if (event.key === 'Enter') {
+                event.preventDefault(); 
+                calculateTotal();
+            }
+        });
     </script>
 </body>
 </html>
