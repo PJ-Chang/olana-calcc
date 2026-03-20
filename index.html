@@ -10,25 +10,35 @@
             background-color: #f4f7f6; 
             display: flex; 
             justify-content: center; 
-            padding: 20px; 
+            align-items: flex-start;
+            padding: 40px 20px; 
             color: #333;
+            margin: 0;
         }
-        .calculator { 
+        /* 主要外框改為 Flex 佈局 */
+        .main-container {
+            display: flex;
+            gap: 20px;
+            width: 100%;
+            max-width: 850px; /* 加寬以容納兩欄 */
+            flex-wrap: wrap; /* 手機版自動換行 */
+            justify-content: center;
+        }
+        .calculator, .result { 
             background: white; 
             padding: 30px; 
             border-radius: 12px; 
             box-shadow: 0 8px 16px rgba(0,0,0,0.1); 
-            width: 100%; 
-            max-width: 420px; 
+            flex: 1; /* 兩邊等寬 */
+            min-width: 320px; /* 保證手機上不會太窄 */
+            box-sizing: border-box;
         }
-        h2 { 
+        h2, h3 { 
             text-align: center; 
             margin-top: 0;
             color: #2c3e50; 
         }
-        .input-group { 
-            margin-bottom: 18px; 
-        }
+        .input-group { margin-bottom: 18px; }
         label { 
             display: block; 
             margin-bottom: 8px; 
@@ -43,7 +53,7 @@
             box-sizing: border-box; 
             font-size: 16px;
         }
-        input[type="number"]:focus, select:focus {
+        input:focus, select:focus {
             outline: none;
             border-color: #3498db;
             box-shadow: 0 0 5px rgba(52, 152, 219, 0.3);
@@ -80,39 +90,34 @@
             transition: background 0.3s; 
             margin-top: 10px;
         }
-        button:hover { 
-            background-color: #2980b9; 
-        }
+        button:hover { background-color: #2980b9; }
+        
+        /* 右側結果區塊調整 */
         .result { 
-            margin-top: 25px; 
-            padding: 20px; 
-            background-color: #f8f9fa; 
-            border: 1px solid #e9ecef;
-            border-radius: 8px; 
-            display: none; 
+            display: block; /* 預設顯示，方便排版 */
+            min-height: 400px;
+            border: 2px solid #3498db;
         }
-        .result h3 { 
-            margin: 0 0 15px 0; 
-            color: #2c3e50;
-            text-align: center;
+        /* 當還沒計算時，讓內容半透明 */
+        .result.waiting {
+            opacity: 0.3;
         }
         .result p { 
-            margin: 8px 0; 
+            margin: 15px 0; 
             display: flex;
             justify-content: space-between;
-            font-size: 15px;
+            font-size: 16px;
         }
         .result hr {
             border: 0;
             border-top: 1px dashed #ccc;
-            margin: 15px 0;
+            margin: 20px 0;
         }
         .total-price {
-            font-size: 20px;
+            font-size: 24px;
             font-weight: bold;
             color: #e74c3c;
         }
-        /* 新增的 CSS 用來排版重量與運費顯示 */
         .weight-display-container {
             display: flex; 
             align-items: center; 
@@ -127,70 +132,67 @@
     </style>
 </head>
 <body>
-    <div class="calculator">
-        <h2> OLANA 代購費計算</h2>
+    <div class="main-container">
+        <div class="calculator">
+            <h2>OLANA 代購計算</h2>
 
-        <div class="input-group">
-            <label for="currency">1. 選擇商品幣別</label>
-            <select id="currency" onchange="updateCurrencyHint()">
-                <option value="KRW">韓幣 (₩) - 青瓦台：原價 ÷ 42</option>
-            </select>
-        </div>
-
-        <div class="input-group">
-            <label id="priceLabel" for="price">2. 商品原價 (₩)</label>
-            <input type="number" id="price" placeholder=" (₩) 韓幣原價" required>
-        </div>
-
-        <div class="input-group">
-            <label>3. 代購費收取方式</label>
-            <div class="radio-group">
-                <label><input type="radio" name="feeType" value="percent" checked> 按商品比例 (%)</label>
-                <label><input type="radio" name="feeType" value="fixed"> 固定金額 (台幣)</label>
+            <div class="input-group">
+                <label for="currency">1. 選擇商品幣別</label>
+                <select id="currency" onchange="updateCurrencyHint()">
+                    <option value="KRW">韓幣 (₩) - 青瓦台：原價 ÷ 42</option>
+                </select>
             </div>
-            <input type="number" id="serviceFee" placeholder="輸入比例 或 固定金額" required>
-        </div>
 
-        <div class="input-group">
-            <label for="weight">4. 商品重量 (公克 / g)</label>
-            <div class="weight-display-container">
-                <input type="number" id="weight" placeholder="商品重量" required oninput="calculateWeightFee()">
-                <span id="weightFeeDisplay" class="weight-fee">= 0 元</span>
+            <div class="input-group">
+                <label id="priceLabel" for="price">2. 商品原價 (₩)</label>
+                <input type="number" id="price" placeholder="輸入韓幣原價">
             </div>
-            <span class="hint">預估國際運費公式：克重 × 0.19 (自動轉台幣)</span>
+
+            <div class="input-group">
+                <label>3. 代購費收取方式</label>
+                <div class="radio-group">
+                    <label><input type="radio" name="feeType" value="percent" checked> 按比例 (%)</label>
+                    <label><input type="radio" name="feeType" value="fixed"> 固定金額 (台幣)</label>
+                </div>
+                <input type="number" id="serviceFee" placeholder="輸入比例(如 10) 或 固定金額">
+            </div>
+
+            <div class="input-group">
+                <label for="weight">4. 商品重量 (公克 / g)</label>
+                <div class="weight-display-container">
+                    <input type="number" id="weight" placeholder="商品重量" oninput="calculateWeightFee()">
+                    <span id="weightFeeDisplay" class="weight-fee">= 0 元</span>
+                </div>
+                <span class="hint">預估國際運費：克重 × 0.19</span>
+            </div>
+
+            <div class="input-group">
+                <label for="localShipping">5. 台灣運費 (台幣)</label>
+                <input type="number" id="localShipping" value="60">
+            </div>
+
+            <button onclick="calculateTotal()">立即計算總價</button>
         </div>
 
-        <div class="input-group">
-            <label for="localShipping">5. 台灣運費 (台幣)</label>
-            <input type="number" id="localShipping" placeholder="國內運費" value="60">
-        </div>
-
-        <button onclick="calculateTotal()">計算總價</button>
-
-        <div class="result" id="resultBox">
+        <div class="result waiting" id="resultBox">
             <h3>📝 報價明細 (台幣)</h3>
             <p><span>商品折合台幣：</span> <span id="resItemPrice">0 元</span></p>
             <p><span>代購費：</span> <span id="resServiceFee">0 元</span></p>
             <p><span>國際運費：</span> <span id="resIntlShipping">0 元</span></p>
             <p><span>台灣運費：</span> <span id="resLocalShipping">0 元</span></p>
             <hr>
-            <p class="total-price"><span>總價格：</span> <span id="resTotal">0 元</span></p>
+            <p class="total-price"><span>總計應付：</span> <span id="resTotal">0 元</span></p>
+            <p style="font-size: 12px; color: #95a5a6; justify-content: center;">* 以上金額皆已無條件進位/四捨五入至整數</p>
         </div>
     </div>
 
     <script>
-        // 切換幣別時，連動更新標籤顯示的符號
         function updateCurrencyHint() {
             const currency = document.getElementById('currency').value;
             const priceLabel = document.getElementById('priceLabel');
-            if (currency === 'KRW') {
-                priceLabel.innerText = '2. 商品原價 (₩)';
-            } else if (currency === 'JPY') {
-                priceLabel.innerText = '2. 商品原價 (¥)';
-            }
+            priceLabel.innerText = currency === 'KRW' ? '2. 商品原價 (₩)' : '2. 商品原價 (¥)';
         }
 
-        // 新增：即時計算旁邊的重量運費
         function calculateWeightFee() {
             const weight = parseFloat(document.getElementById('weight').value) || 0;
             const intlShippingTWD = Math.round(weight * 0.19);
@@ -198,7 +200,6 @@
         }
 
         function calculateTotal() {
-            // 取得輸入值
             const currency = document.getElementById('currency').value;
             const price = parseFloat(document.getElementById('price').value) || 0;
             const feeType = document.querySelector('input[name="feeType"]:checked').value;
@@ -206,15 +207,10 @@
             const weight = parseFloat(document.getElementById('weight').value) || 0;
             const localShipping = parseFloat(document.getElementById('localShipping').value) || 0;
 
-            // 1. 依照幣別計算商品台幣價格 (四捨五入)
-            let itemPriceTWD = 0;
-            if (currency === 'KRW') {
-                itemPriceTWD = Math.round(price / 42);
-            } else if (currency === 'JPY') {
-                itemPriceTWD = Math.round(price * 0.21);
-            }
+            // 1. 匯率計算
+            let itemPriceTWD = Math.round(price / 42);
 
-            // 2. 計算代購費 (邏輯不變)
+            // 2. 代購費
             let serviceFeeTWD = 0;
             if (feeType === 'percent') {
                 serviceFeeTWD = Math.round(itemPriceTWD * (serviceFeeInput / 100));
@@ -222,21 +218,21 @@
                 serviceFeeTWD = serviceFeeInput;
             }
 
-            // 3. 計算國際運費 (克重 * 0.19)
+            // 3. 國際運費
             const intlShippingTWD = Math.round(weight * 0.19);
 
-            // 4. 計算最終總價
+            // 4. 總價
             const totalTWD = itemPriceTWD + serviceFeeTWD + intlShippingTWD + localShipping;
 
-            // 5. 更新網頁上的數字
+            // 更新顯示
             document.getElementById('resItemPrice').innerText = itemPriceTWD + ' 元';
             document.getElementById('resServiceFee').innerText = serviceFeeTWD + ' 元';
             document.getElementById('resIntlShipping').innerText = intlShippingTWD + ' 元';
             document.getElementById('resLocalShipping').innerText = localShipping + ' 元';
             document.getElementById('resTotal').innerText = totalTWD + ' 元';
 
-            // 顯示結果區塊
-            document.getElementById('resultBox').style.display = 'block';
+            // 移除等待狀態的透明度
+            document.getElementById('resultBox').classList.remove('waiting');
         }
     </script>
 </body>
