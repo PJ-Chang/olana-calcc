@@ -2,21 +2,21 @@
 <html lang="zh-TW">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>OLANA 代購費計算</title>
+    <meta id="viewportMeta" name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no"> 
+    <title>OLANA 嚴選代購</title>
     <style>
-        /* 🎨 品牌顏色設定區 (奶茶色主題) */
+        /* 🎨 品牌顏色設定區 (韓國 - 奶茶色主題) */
         :root {
             --brand-primary: #B5835A;   
             --brand-primary-hover: #966A45; 
             --brand-bg: #C9A494;        
             --brand-text: #4A4036;      
             --brand-accent: #C06C5B;    
-            --box-shadow: 0 10px 25px rgba(181, 131, 90, 0.15); 
+            --box-shadow: 0 5px 15px rgba(181, 131, 90, 0.15); 
         }
 
         body { 
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; 
+            font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif; 
             background-color: var(--brand-bg); 
             display: flex; 
             justify-content: center; 
@@ -25,386 +25,187 @@
             color: var(--brand-text);
             margin: 0;
             overflow-x: hidden;
+            transition: min-width 0.3s ease;
         }
 
-        /* 👇 歷史紀錄按鈕：固定在左上角 20px 👇 */
-        .toggle-sidebar-btn {
-            position: fixed;
-            left: 20px;
-            top: 20px; 
-            background-color: var(--brand-text);
-            color: white;
-            border: none;
-            padding: 12px 20px; 
-            border-radius: 8px;
-            cursor: pointer;
-            font-size: 15px;
-            font-weight: bold;
-            z-index: 1000;
-            box-shadow: 0 4px 10px rgba(0,0,0,0.15);
-            transition: all 0.3s ease;
-            box-sizing: border-box;
-            height: 45px;
+        /* 👇 右上角：手機版/電腦版切換按鈕 👇 */
+        .view-switch-btn {
+            position: fixed; right: 20px; top: 20px; height: 45px;      
+            display: flex; align-items: center; justify-content: center;
+            background-color: #f5f5f5; color: #666666; border: 1px solid #dcdcdc; 
+            padding: 0 16px; border-radius: 25px; font-size: 14px; font-weight: bold;
+            cursor: pointer; z-index: 1000; box-shadow: 0 2px 8px rgba(0,0,0,0.05); 
+            transition: all 0.3s ease; box-sizing: border-box;
         }
-        .toggle-sidebar-btn:hover {
-            background-color: #332b24;
-            transform: translateY(-2px);
+        .view-switch-btn:hover { background-color: #e8e8e8; border-color: #c0c0c0; color: #333333; }
+        .view-switch-btn.top-hidden { opacity: 0; visibility: hidden; transform: translateY(-50px); }
+
+        /* 👇 左上角：歷史紀錄按鈕 👇 */
+        .toggle-sidebar-btn {
+            position: fixed; left: 20px; top: 20px; height: 45px; width: 45px;  
+            background-color: var(--brand-primary); color: white; border: none;
+            padding: 0; border-radius: 50%; cursor: pointer; font-size: 18px; font-weight: bold;
+            z-index: 1000; box-shadow: 0 4px 10px rgba(0,0,0,0.15);
+            transition: opacity 0.3s ease, transform 0.3s ease, background-color 0.3s ease, visibility 0.3s, width 0.3s, height 0.3s;
+            box-sizing: border-box; display: flex; align-items: center; justify-content: center;
+        }
+        .toggle-sidebar-btn:hover { background-color: var(--brand-primary-hover); transform: translateY(-2px); }
+        .toggle-sidebar-btn.hidden { opacity: 0; visibility: hidden; transform: scale(0.5);  }
+
+        /* 👇 手機版樣式調整 👇 */
+        @media (max-width: 900px) {
+            .toggle-sidebar-btn.scroll-hidden { opacity: 0; visibility: hidden; transform: translateY(-100px); }
+            .toggle-sidebar-btn, .view-switch-btn { top: 15px; height: 36px; }
+            .toggle-sidebar-btn { width: 36px; left: 15px; }
+            .view-switch-btn { right: 15px; padding: 0 12px; font-size: 13px; }
         }
 
         /* 超級外框 */
-        .page-layout {
-            display: flex;
-            width: 100%;
-            max-width: 1200px;
-            align-items: flex-start;
-            justify-content: center;
-            margin-top: 0; 
-        }
+        .page-layout { display: flex; width: 100%; max-width: 1200px; align-items: flex-start; justify-content: center; margin-top: 0; }
 
-        /* 隱形的推擠空間，使用絲滑貝茲曲線 */
-        .sidebar-spacer {
-            width: 0;
-            transition: width 0.4s cubic-bezier(0.4, 0, 0.2, 1);
-            flex-shrink: 0;
-        }
-        .sidebar-spacer.open {
-            width: 350px; 
-        }
-        @media (max-width: 900px) {
-            .sidebar-spacer.open { width: 0; } 
-        }
+        /* 隱形的推擠空間 */
+        .sidebar-spacer { width: 0; transition: width 0.5s cubic-bezier(0.2, 0.8, 0.2, 1); flex-shrink: 0; }
+        .sidebar-spacer.open { width: 350px; }
+        @media (max-width: 900px) { .sidebar-spacer.open { width: 0; } }
 
-        /* 👇 左側收合選單：完美貼齊 left: 20px, top: 20px 👇 */
+        /* 左側收合選單 (記事本) - 調整 z-index 確保在最前面 */
         .sidebar {
-            background: #ffffff;
-            border-radius: 16px;
-            box-shadow: var(--box-shadow);
-            width: 0; 
-            padding: 0;
-            opacity: 0;
-            overflow: hidden;
-            transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1); /* 絲滑展開動畫 */
-            box-sizing: border-box;
-            white-space: nowrap; 
-            display: flex;
-            flex-direction: column;
-            
-            position: fixed; 
-            left: 20px;      
-            top: 20px;       
-            z-index: 999;
+            background: #ffffff; border-radius: 12px; box-shadow: var(--box-shadow);
+            width: 330px; max-width: 85vw; padding: 25px; 
+            opacity: 0; visibility: hidden; transform: translateX(-110%) scale(0.98); 
+            transition: all 0.5s cubic-bezier(0.2, 0.8, 0.2, 1); box-sizing: border-box;
+            display: flex; flex-direction: column; position: fixed; left: 20px; top: 20px; 
+            z-index: 99999; max-height: calc(100vh - 40px); 
         }
-        .sidebar.open {
-            width: 330px; 
-            padding: 25px; 
-            opacity: 1;
-            max-height: calc(100vh - 40px); 
-            white-space: normal;
-        }
+        .sidebar.open { opacity: 1; visibility: visible; transform: translateX(0) scale(1); }
 
-        /* 👇 標題：字體改回原樣，但保留 2 公分視覺比例 (padding & margin 加大) 👇 */
+        /* 標題 */
         .sidebar-header {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            border-bottom: 2px dashed #E0D8D0;
-            padding-bottom: 25px; /* 增加下方空間，維持 2 公分視覺比例 */
-            margin-bottom: 25px;
-            flex-shrink: 0;
+            display: flex; justify-content: space-between; align-items: center;
+            border-bottom: 2px dashed #E0D8D0; padding-bottom: 25px; margin-bottom: 25px; flex-shrink: 0;
         }
-        .sidebar-header h3 { 
-            margin: 0; 
-            font-size: 18px; /* 回到原本小巧精緻的字體大小 */
-            line-height: 1.2;
-            color: var(--brand-primary);
-            font-weight: bold;
-        }
-        .close-btn {
-            cursor: pointer;
-            color: #9A8C7F;
-            font-weight: bold;
-            font-size: 20px;
-            transition: color 0.2s;
-        }
-        .close-btn:hover { color: var(--brand-accent); }
+        .sidebar-header h3 { margin: 0; font-size: 18px; line-height: 1.2; color: var(--brand-text); font-weight: bold; }
         
-        /* 儲存的清單容器 */
-        .saved-list-container {
-            flex: 1;
-            overflow-y: auto;
-            padding-right: 5px; 
-        }
+        .close-btn { cursor: pointer; color: var(--brand-accent); font-weight: bold; font-size: 20px; transition: color 0.2s; }
+        .close-btn:hover { color: var(--brand-primary); }
+        
+        .saved-list-container { flex: 1; overflow-y: auto; padding-right: 5px; }
         
         /* 每一筆儲存的報價卡片 */
-        .saved-item {
-            background: #FCFAFA;
-            border: 1px solid #E0D8D0;
-            border-radius: 8px;
-            margin-bottom: 12px;
-            position: relative;
-        }
-
-        .saved-item-inner {
-            display: flex;
-            align-items: flex-start;
-            gap: 10px;
-            padding: 12px;
-            width: 100%;
-            box-sizing: border-box;
-            transform-origin: center;
-            /* 已經移除 iPhone Jiggle 抖動動畫 */
-        }
+        .saved-item { background: #FCFAFA; border: 1px solid #E0D8D0; border-radius: 8px; margin-bottom: 12px; position: relative; }
+        .saved-item-inner { display: flex; align-items: flex-start; gap: 10px; padding: 12px; width: 100%; box-sizing: border-box; transform-origin: center; }
+        .saved-item.dragging { opacity: 0.6; background-color: #f5ece8; border: 1px dashed var(--brand-primary); z-index: 100; }
         
-        /* 正在被拖拉的那張卡片 */
-        .saved-item.dragging {
-            opacity: 0.6;
-            background-color: #f5ece8;
-            border: 1px dashed var(--brand-primary);
-            z-index: 100;
-        }
-        
-        .drag-handle {
-            cursor: grab;
-            color: #C9A494;
-            font-size: 18px;
-            padding-top: 2px;
-            user-select: none;
-            transition: color 0.2s;
-        }
+        .drag-handle { cursor: grab; color: #C9A494; font-size: 18px; padding-top: 2px; user-select: none; transition: color 0.2s; }
         .drag-handle:hover { color: var(--brand-primary); }
         .drag-handle:active { cursor: grabbing; }
 
-        .item-content {
-            flex: 1;
-            display: flex;
-            flex-direction: column;
-            gap: 6px;
-            position: relative;
-        }
-        .saved-item .del-btn {
-            position: absolute;
-            right: 0px;
-            top: 0px;
-            cursor: pointer;
-            color: var(--brand-accent);
-            font-size: 12px;
-            z-index: 10;
-        }
+        .item-content { flex: 1; display: flex; flex-direction: column; gap: 6px; position: relative; }
+        .saved-item .del-btn { position: absolute; right: 0px; top: 0px; cursor: pointer; color: var(--brand-accent); font-size: 12px; z-index: 10; }
+        .saved-item .copy-btn { position: absolute; right: 22px; top: -1px; cursor: pointer; color: #C9A494; font-size: 13px; z-index: 10; transition: color 0.2s; }
+        .saved-item .copy-btn:hover { color: var(--brand-primary); }
 
-        /* 直接編輯文字效果 CSS */
-        .editable-text {
-            padding: 2px 4px;
-            margin: -2px -4px;
-            border-radius: 4px;
-            transition: background 0.2s;
-            outline: none;
-            cursor: text;
-        }
-        .editable-text:hover, .editable-text:focus {
-            background-color: #f0e6e1;
-            border-bottom: 1px dashed var(--brand-primary);
-        }
-        .editable-text:hover::after {
-            content: " ✎";
-            font-size: 12px;
-            color: var(--brand-primary);
-            position: absolute;
-        }
-        .editable-text:focus::after {
-            display: none;
-        }
+        .editable-text { padding: 2px 4px; margin: -2px -4px; border-radius: 4px; transition: background 0.2s; outline: none; cursor: text; }
+        .editable-text:hover, .editable-text:focus { background-color: #f0e6e1; border-bottom: 1px dashed var(--brand-primary); }
+        .editable-text:hover::after { content: " ✎"; font-size: 12px; color: var(--brand-primary); position: absolute; }
+        .editable-text:focus::after { display: none; }
         
         /* 主要計算機外框 */
         .main-container {
-            display: flex;
-            gap: 25px;
-            width: 100%;
-            max-width: 900px; 
-            flex-wrap: wrap; 
-            justify-content: center;
-            transition: all 0.3s ease;
+            display: flex; gap: 25px; width: 100%; max-width: 900px; flex-wrap: wrap; 
+            justify-content: center; transition: all 0.3s ease; margin-top: 50px; 
         }
         
         .calculator, .result { 
-            background: #ffffff; 
-            padding: 35px; 
-            border-radius: 16px; 
-            box-shadow: var(--box-shadow); 
-            flex: 1; 
-            min-width: 320px; 
-            box-sizing: border-box;
+            background: #ffffff; padding: 35px; border-radius: 12px; box-shadow: var(--box-shadow); 
+            flex: 1; min-width: 320px; box-sizing: border-box; 
         }
 
-        h2, h3 { 
-            text-align: center; 
-            margin-top: 0;
-            color: var(--brand-primary); 
-            letter-spacing: 1px;
-        }
+        /* 強制版面切換 */
+        body.force-mobile .main-container { flex-direction: column !important; flex-wrap: nowrap !important; max-width: 450px !important; }
+        body.force-mobile .calculator, body.force-mobile .result { width: 100% !important; }
+        body.force-mobile .sidebar-spacer.open { width: 0 !important; }
+
+        body.force-desktop { min-width: 1000px; overflow-x: auto; }
+        body.force-desktop .main-container { flex-wrap: nowrap !important; max-width: 1000px !important; }
+        body.force-desktop .sidebar-spacer.open { width: 350px !important; }
+
+        /* 放大的主標題 */
+        h2 { text-align: center; margin-top: 0; color: var(--brand-text); letter-spacing: 1px; font-size: 28px; font-weight: 800; }
+        h3 { text-align: center; margin-top: 0; color: var(--brand-text); letter-spacing: 1px; font-size: 18px; }
+        h2::before, h3::before { content: "▫️ "; font-size: 14px; color: var(--brand-primary); vertical-align: middle; }
+
+        @media (max-width: 480px) { h2 { font-size: 22px; white-space: nowrap; overflow: visible; letter-spacing: 0px; } }
 
         .input-group { margin-bottom: 20px; }
-        
-        label { 
-            display: block; 
-            margin-bottom: 8px; 
-            font-weight: 600; 
-            font-size: 14.5px;
-            color: var(--brand-text);
-        }
+        label { display: block; margin-bottom: 8px; font-weight: 600; font-size: 14.5px; color: var(--brand-text); }
 
         input[type="text"], input[type="number"], select { 
-            width: 100%; 
-            padding: 12px; 
-            border: 1px solid #E0D8D0; 
-            border-radius: 8px; 
-            box-sizing: border-box; 
-            font-size: 16px;
-            color: var(--brand-text);
-            background-color: #FCFAFA;
-            transition: all 0.3s ease;
+            width: 100%; padding: 12px; border: 1px solid #E0D8D0; border-radius: 6px; 
+            box-sizing: border-box; font-size: 16px; color: var(--brand-text); 
+            background-color: #FCFAFA; transition: all 0.3s ease; 
         }
+        input:focus, select:focus { outline: none; border-color: var(--brand-primary); box-shadow: 0 0 0 3px rgba(181, 131, 90, 0.1); background-color: #ffffff;}
 
-        input:focus, select:focus {
-            outline: none;
-            border-color: var(--brand-primary);
-            box-shadow: 0 0 0 3px rgba(181, 131, 90, 0.2); 
-            background-color: #ffffff;
-        }
+        .radio-group { display: flex; gap: 15px; margin-bottom: 12px; font-size: 14.5px; }
+        .radio-group label { font-weight: normal; display: flex; align-items: center; gap: 6px; cursor: pointer; }
+        input[type="radio"] { accent-color: var(--brand-primary); }
 
-        .radio-group { 
-            display: flex; 
-            gap: 15px; 
-            margin-bottom: 12px; 
-            font-size: 14.5px;
-        }
-
-        .radio-group label {
-            font-weight: normal;
-            display: flex;
-            align-items: center;
-            gap: 6px;
-            cursor: pointer;
-        }
-
-        input[type="radio"] {
-            accent-color: var(--brand-primary);
-        }
-
-        .hint {
-            font-size: 12px;
-            color: #9A8C7F; 
-            margin-top: 6px;
-            display: block;
-        }
+        .hint { font-size: 12px; color: #9A8C7F; margin-top: 6px; display: block; }
 
         button.primary-btn { 
-            width: 100%; 
-            padding: 15px; 
-            background-color: var(--brand-primary); 
-            color: white; 
-            border: none; 
-            border-radius: 8px; 
-            font-size: 16px; 
-            font-weight: bold;
-            letter-spacing: 1px;
-            cursor: pointer; 
-            transition: background 0.3s, transform 0.1s; 
-            margin-top: 15px;
+            width: 100%; padding: 15px; background-color: var(--brand-primary); color: white; 
+            border: none; border-radius: 6px; font-size: 16px; font-weight: bold; letter-spacing: 1px; 
+            cursor: pointer; transition: background 0.3s, transform 0.1s; margin-top: 15px; 
         }
         button.primary-btn:hover { background-color: var(--brand-primary-hover); }
         button.primary-btn:active { transform: scale(0.98); }
         
-        .result { 
-            display: flex; 
-            flex-direction: column;
-            border: 2px solid var(--brand-primary); 
-            position: relative;
-        }
-        .result.waiting {
-            opacity: 0.4;
-            border-color: #E0D8D0;
-            filter: grayscale(0.5);
-        }
+        .result { display: flex; flex-direction: column; border: 2px solid var(--brand-primary); position: relative; }
+        .result.waiting { opacity: 0.4; border-color: #E0D8D0; filter: grayscale(1); }
 
         @keyframes refreshEffect {
             0% { opacity: 0.3; transform: scale(0.98); background-color: #FFF8F3; }
             100% { opacity: 1; transform: scale(1); background-color: #ffffff; }
         }
-        .play-refresh {
-            animation: refreshEffect 0.5s ease-out;
-        }
+        .play-refresh { animation: refreshEffect 0.5s ease-out; }
 
-        .result p { 
-            margin: 16px 0; 
-            display: flex;
-            justify-content: space-between;
-            font-size: 16px;
-        }
-        .result hr {
-            border: 0;
-            border-top: 1px dashed #D5C9BE; 
-            margin: 20px 0;
-            width: 100%;
-        }
-        .cost-price {
-            font-size: 18px;
-            font-weight: bold;
-            color: var(--brand-text); 
-        }
-        .total-price {
-            font-size: 24px;
-            font-weight: bold;
-            color: var(--brand-accent) !important; 
-        }
-        .weight-display-container {
-            display: flex; 
-            align-items: center; 
-            gap: 12px;
-        }
-        .weight-fee {
-            color: var(--brand-primary); 
-            font-weight: bold; 
-            white-space: nowrap; 
-            font-size: 16px;
-        }
+        .result p { margin: 16px 0; display: flex; justify-content: space-between; font-size: 16px; }
+        .result hr { border: 0; border-top: 1px dashed #D5C9BE; margin: 20px 0; width: 100%; }
+        .cost-price { font-size: 18px; font-weight: bold; color: var(--brand-text); }
+        .total-price { font-size: 24px; font-weight: bold; color: var(--brand-primary) !important; }
+
+        .inline-calc-container { display: flex; align-items: center; gap: 12px; }
+        .inline-calc-result { color: var(--brand-primary); font-weight: bold; white-space: nowrap; font-size: 16px; }
 
         .save-section {
-            margin-top: auto; 
-            padding-top: 25px;
-            border-top: 2px dashed #E0D8D0;
-            display: flex;
-            flex-direction: column;
-            gap: 12px;
+            margin-top: auto; padding-top: 25px; border-top: 2px dashed #E0D8D0;
+            display: flex; flex-direction: column; gap: 12px;
         }
         .save-btn {
-            width: 100%;
-            padding: 12px;
-            background-color: var(--brand-text); 
-            color: white;
-            border: none;
-            border-radius: 8px;
-            font-size: 15px;
-            font-weight: bold;
-            cursor: pointer;
-            transition: 0.3s;
+            width: 100%; padding: 12px; background-color: var(--brand-text); color: white;
+            border: none; border-radius: 6px; font-size: 15px; font-weight: bold;
+            cursor: pointer; transition: 0.3s;
         }
-        .save-btn:hover { background-color: #332b24; }
+        .save-btn:hover:not(:disabled) { background-color: #332b24; }
+        .save-btn:disabled { background-color: #E0D8D0; color: #A0A0A0; cursor: not-allowed; }
     </style>
 </head>
 <body>
 
-    <button class="toggle-sidebar-btn" id="historyBtn" onclick="toggleSidebar()">📂 歷史紀錄</button>
+    <button class="view-switch-btn" id="viewSwitchBtn" onclick="toggleViewMode()">💻 電腦版</button>
+    <button class="toggle-sidebar-btn" id="historyBtn" onclick="toggleSidebar()">☰</button>
 
     <div class="page-layout">
         
         <div class="sidebar" id="sidebar">
             <div class="sidebar-header">
-                <h3>📂 儲存的報價</h3>
+                <h3>OLANA 嚴選代購</h3>
                 <span class="close-btn" onclick="toggleSidebar()">✖</span>
             </div>
             
             <p id="emptyMsg" style="color: #9A8C7F; font-size: 14px; text-align: center; margin-top: 30px;">
-                目前尚無紀錄哦！<br>在右側輸入名稱即可儲存。
+                目前尚無紀錄<br>在右側輸入名稱即可儲存
             </p>
             
             <div class="saved-list-container" id="savedList"></div>
@@ -414,41 +215,53 @@
 
         <div class="main-container">
             <div class="calculator">
-                <h2>OLANA 報價小幫手</h2>
+                <h2>OLANA 嚴選代購</h2>
 
                 <div class="input-group">
                     <label for="currency">1. 選擇商品幣別</label>
-                    <select id="currency" onchange="updateCurrencyHint()">
-                        <option value="KRW">韓幣 (₩) - 青瓦台：原價 ÷ 42</option>
+                    <select id="currency" onchange="toggleCustomRate()">
+                        <option value="KRW">韓幣 ₩ : 韓幣原價 ÷ 42</option>
+                        <option value="custom">自訂匯率 ⚙️</option>
                     </select>
+                    <div id="customRateContainer" style="display: none; margin-top: 10px;">
+                        <input type="number" id="customRate" placeholder="輸入匯率" style="width: 100%;" oninput="calculateItemPrice()" inputmode="decimal">
+                    </div>
                 </div>
 
                 <div class="input-group">
                     <label id="priceLabel" for="price">2. 商品原價 (₩)</label>
-                    <input type="number" id="price" placeholder="輸入韓幣原價">
+                    <div class="inline-calc-container">
+                        <input type="number" id="price" placeholder="輸入商品原價" oninput="calculateItemPrice()" inputmode="decimal"> 
+                        <span id="itemPriceDisplay" class="inline-calc-result">= 0 元</span>
+                    </div>
                 </div>
 
                 <div class="input-group">
-                    <label>3. 代購費收取方式</label>
+                    <label>3. 利潤</label>
                     <div class="radio-group">
                         <label><input type="radio" name="feeType" value="percent" checked> 按比例 (%)</label>
                         <label><input type="radio" name="feeType" value="fixed"> 固定金額 (台幣)</label>
                     </div>
-                    <input type="number" id="serviceFee" placeholder="輸入比例(如 10) 或 固定金額">
+                    <input type="number" id="serviceFee" placeholder="輸入比例 或 固定金額" inputmode="decimal"> 
                 </div>
 
                 <div class="input-group">
                     <label for="weight">4. 商品重量 (公克 / g)</label>
-                    <div class="weight-display-container">
-                        <input type="number" id="weight" placeholder="商品重量" oninput="calculateWeightFee()">
-                        <span id="weightFeeDisplay" class="weight-fee">= 0 元</span>
+                    <div class="inline-calc-container">
+                        <input type="number" id="weight" placeholder="商品重量" oninput="calculateWeightFee()" inputmode="decimal"> 
+                        <span id="weightFeeDisplay" class="inline-calc-result">= 0 元</span>
                     </div>
                     <span class="hint">預估國際運費：克重 × 0.19</span>
                 </div>
 
                 <div class="input-group">
                     <label for="localShipping">5. 台灣運費 (台幣)</label>
-                    <input type="number" id="localShipping" value="60">
+                    <select id="localShipping">
+                        <option value="60">7-11 / 全家 店到店 60</option>
+                        <option value="40">郵局（小）40</option>
+                        <option value="80">郵局（大）80</option>
+                        <option value="0">免運 0</option>
+                    </select>
                 </div>
 
                 <button class="primary-btn" onclick="calculateTotal()" id="calcBtn">立即計算總價</button>
@@ -457,20 +270,20 @@
             <div class="result waiting" id="resultBox">
                 <h3>📝 報價明細 (台幣)</h3>
                 <p><span>商品折合台幣：</span> <span id="resItemPrice">0 元</span></p>
-                <p><span>代購服務費：</span> <span id="resServiceFee">0 元</span></p>
                 <p><span>預估國際運費：</span> <span id="resIntlShipping">0 元</span></p>
-                <p><span>台灣國內運費：</span> <span id="resLocalShipping">0 元</span></p>
+                <p><span>台灣運費：</span> <span id="resLocalShipping">0 元</span></p>
+                <p><span>利潤：</span> <span id="resServiceFee">0 元</span></p>
                 <hr>
-                <p class="cost-price"><span>成本 (商品+雙運費)：</span> <span id="resCost">0 元</span></p>
+                <p class="cost-price"><span>成本：</span> <span id="resCost">0 元</span></p>
                 <p class="total-price"><span>賣價：</span> <span id="resTotal">0 元</span></p>
                 
                 <p style="font-size: 13px; color: #9A8C7F; justify-content: center; margin-top: 15px;">
-                    * 以上報價皆已自動四捨五入至整數
+                    * 以上報價皆自動四捨五入至整數
                 </p>
 
                 <div class="save-section">
-                    <input type="text" id="quoteName" placeholder="輸入此報價名稱 (如: 買家A的毛衣)">
-                    <button class="save-btn" onclick="saveToSidebar()">💾 加入左側收合選單</button>
+                    <input type="text" id="quoteName" placeholder="儲存報價名稱">
+                    <button class="save-btn" id="saveBtn" onclick="saveToSidebar()" disabled>💾 儲存至記事本</button>
                 </div>
             </div>
         </div>
@@ -479,12 +292,97 @@
     <script>
         window.addEventListener('DOMContentLoaded', () => {
             loadFromStorage();
+            
+            const btn = document.getElementById('viewSwitchBtn');
+            if (window.innerWidth <= 900) {
+                btn.innerHTML = '💻 電腦版';
+            } else {
+                btn.innerHTML = '📱 手機版';
+            }
+
+            const inputs = document.querySelectorAll('input:not(#quoteName), select');
+            inputs.forEach(input => {
+                input.addEventListener('input', () => {
+                    document.getElementById('saveBtn').disabled = true;
+                });
+                input.addEventListener('change', () => {
+                    document.getElementById('saveBtn').disabled = true;
+                });
+            });
         });
 
-        function updateCurrencyHint() {
+        function toggleViewMode() {
+            const body = document.body;
+            const btn = document.getElementById('viewSwitchBtn');
+            const viewport = document.getElementById('viewportMeta');
+            
+            if (btn.innerHTML.includes('手機版')) {
+                body.classList.remove('force-desktop');
+                body.classList.add('force-mobile');
+                viewport.setAttribute('content', 'width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no');
+                btn.innerHTML = '💻 電腦版';
+            } else {
+                body.classList.remove('force-mobile');
+                body.classList.add('force-desktop');
+                viewport.setAttribute('content', 'width=1100'); 
+                btn.innerHTML = '📱 手機版';
+            }
+        }
+
+        let lastScrollTop = 0;
+        window.addEventListener('scroll', function() {
+            const sidebar = document.getElementById('sidebar');
+            const historyBtn = document.getElementById('historyBtn');
+            const viewSwitchBtn = document.getElementById('viewSwitchBtn');
+            let scrollTop = window.pageYOffset || document.documentElement.scrollTop;
+
+            if (scrollTop > 10) {
+                viewSwitchBtn.classList.add('top-hidden');
+            } else {
+                viewSwitchBtn.classList.remove('top-hidden');
+            }
+
+            if (sidebar.classList.contains('open')) return;
+
+            if (window.innerWidth <= 900 && !document.body.classList.contains('force-desktop')) {
+                if (scrollTop > lastScrollTop && scrollTop > 50) {
+                    historyBtn.classList.add('scroll-hidden');
+                } else {
+                    historyBtn.classList.remove('scroll-hidden');
+                }
+                lastScrollTop = scrollTop <= 0 ? 0 : scrollTop; 
+            }
+        }, { passive: true });
+
+        function toggleCustomRate() {
             const currency = document.getElementById('currency').value;
+            const customContainer = document.getElementById('customRateContainer');
             const priceLabel = document.getElementById('priceLabel');
-            priceLabel.innerText = currency === 'KRW' ? '2. 商品原價 (₩)' : '2. 商品原價 (¥)';
+            
+            if (currency === 'custom') {
+                customContainer.style.display = 'block';
+                priceLabel.innerText = '2. 商品原價'; 
+            } else {
+                customContainer.style.display = 'none';
+                priceLabel.innerText = '2. 商品原價 (₩)';
+            }
+            calculateItemPrice();
+            document.getElementById('saveBtn').disabled = true;
+        }
+
+        function calculateItemPrice() {
+            const price = parseFloat(document.getElementById('price').value) || 0;
+            const currency = document.getElementById('currency').value;
+            let itemPriceTWD = 0;
+            
+            if (currency === 'KRW') {
+                itemPriceTWD = Math.round(price / 42);
+            } else if (currency === 'custom') {
+                const rate = parseFloat(document.getElementById('customRate').value) || 1;
+                itemPriceTWD = Math.round(price / rate);
+            }
+            
+            document.getElementById('itemPriceDisplay').innerText = '= ' + itemPriceTWD + ' 元';
         }
 
         function calculateWeightFee() {
@@ -495,12 +393,20 @@
 
         function calculateTotal() {
             const price = parseFloat(document.getElementById('price').value) || 0;
+            const currency = document.getElementById('currency').value;
+            let itemPriceTWD = 0;
+            
+            if (currency === 'KRW') {
+                itemPriceTWD = Math.round(price / 42);
+            } else if (currency === 'custom') {
+                const rate = parseFloat(document.getElementById('customRate').value) || 1;
+                itemPriceTWD = Math.round(price / rate);
+            }
+
             const feeType = document.querySelector('input[name="feeType"]:checked').value;
             const serviceFeeInput = parseFloat(document.getElementById('serviceFee').value) || 0;
             const weight = parseFloat(document.getElementById('weight').value) || 0;
             const localShipping = parseFloat(document.getElementById('localShipping').value) || 0;
-
-            let itemPriceTWD = Math.round(price / 42);
 
             let serviceFeeTWD = 0;
             if (feeType === 'percent') {
@@ -525,6 +431,12 @@
             resultBox.classList.remove('play-refresh');
             void resultBox.offsetWidth; 
             resultBox.classList.add('play-refresh');
+
+            document.getElementById('saveBtn').disabled = false;
+
+            setTimeout(() => {
+                resultBox.scrollIntoView({ behavior: 'smooth', block: 'center' });
+            }, 100); 
         }
 
         document.addEventListener('keydown', function(event) {
@@ -553,14 +465,14 @@
             spacer.classList.toggle('open'); 
             
             if (sidebar.classList.contains('open')) {
-                historyBtn.style.display = 'none'; 
+                historyBtn.classList.add('hidden'); 
             } else {
-                historyBtn.style.display = 'block'; 
+                historyBtn.classList.remove('hidden'); 
             }
         }
 
         function loadFromStorage() {
-            const savedData = localStorage.getItem('olanaQuotes');
+            const savedData = localStorage.getItem('olanaQuotes'); 
             if (savedData) {
                 const quotes = JSON.parse(savedData);
                 quotes.forEach(q => renderSavedItem(q.id, q.name, q.cost, q.total, false));
@@ -582,28 +494,32 @@
                     total: item.querySelector('.quote-total').innerText
                 });
             });
-            localStorage.setItem('olanaQuotes', JSON.stringify(newQuotes));
+            localStorage.setItem('olanaQuotes', JSON.stringify(newQuotes)); 
         }
 
         function saveToSidebar() {
+            if (document.getElementById('saveBtn').disabled) {
+                alert("請先點擊「立即計算總價」更新數值後再儲存");
+                return;
+            }
+
             const nameInput = document.getElementById('quoteName');
             const quoteName = nameInput.value.trim();
             const totalText = document.getElementById('resTotal').innerText;
             const costText = document.getElementById('resCost').innerText;
 
             if (!quoteName) {
-                alert("請先輸入報價名稱 (例如: 客人A的外套) 喔！");
+                alert("請先輸入報價名稱");
                 nameInput.focus();
                 return;
             }
             if (totalText === '0 元') {
-                alert("請先點擊「立即計算總價」後再儲存！");
+                alert("請先點擊「立即計算總價」後再儲存");
                 return;
             }
 
             const itemId = 'save_' + Date.now();
-            
-            renderSavedItem(itemId, `📌 ${quoteName}`, `成本：${costText}`, `賣價：${totalText}`, true);
+            renderSavedItem(itemId, quoteName, `成本：${costText}`, `賣價：${totalText}`, true);
 
             document.getElementById('emptyMsg').style.display = 'none';
             savedItemsCount++;
@@ -615,6 +531,26 @@
             if (!sidebar.classList.contains('open')) {
                 toggleSidebar(); 
             }
+
+            document.getElementById('saveBtn').disabled = true;
+        }
+
+        function copySavedItem(id) {
+            const item = document.getElementById(id);
+            if (!item) return;
+            
+            const name = item.querySelector('.quote-name').innerText;
+            const cost = item.querySelector('.quote-cost').innerText;
+            const total = item.querySelector('.quote-total').innerText;
+            
+            const textToCopy = `${name}\n${cost}\n${total}`;
+            
+            navigator.clipboard.writeText(textToCopy).then(() => {
+                alert('已複製報價！');
+            }).catch(err => {
+                console.error('複製失敗', err);
+                alert('複製失敗，請手動選取複製。');
+            });
         }
 
         function renderSavedItem(id, name, cost, total, prepend = false) {
@@ -628,6 +564,7 @@
                 <div class="saved-item-inner">
                     <div class="drag-handle" title="按住拖曳可排序">☰</div>
                     <div class="item-content">
+                        <span class="copy-btn" onclick="copySavedItem('${id}')" title="複製此筆內容">📄</span>
                         <span class="del-btn" onclick="deleteSavedItem('${id}')" title="刪除此筆">✖</span>
                         <strong class="editable-text quote-name" contenteditable="true" style="color: var(--brand-text); font-size: 16px;" title="點擊即可修改" onblur="saveOrderToStorage()" onkeydown="if(event.key==='Enter'){event.preventDefault(); this.blur();}">${name}</strong>
                         <span class="editable-text quote-cost" contenteditable="true" style="font-size: 14px; color: #9A8C7F;" title="點擊即可修改" onblur="saveOrderToStorage()" onkeydown="if(event.key==='Enter'){event.preventDefault(); this.blur();}">${cost}</span>
@@ -654,7 +591,7 @@
             saveOrderToStorage(); 
         }
 
-        // ------------------ 拖曳排序相關邏輯 (含更絲滑的滑開動畫) ------------------
+        // ------------------ 拖曳排序相關邏輯 ------------------
 
         function handleDragStart(e) {
             dragSrcEl = this;
@@ -668,7 +605,6 @@
             return false;
         }
 
-        // FLIP 動畫技術，更絲滑的過渡時間 (0.4s)
         function handleDragEnter(e) {
             if (this !== dragSrcEl && this.classList.contains('saved-item')) {
                 const list = this.parentNode;
@@ -697,14 +633,11 @@
                         void c.offsetWidth; 
                         
                         c.style.transform = 'translateY(0)';
-                        // 👇 修改為 0.4s 絲滑貝茲曲線 👇
                         c.style.transition = 'transform 0.4s cubic-bezier(0.4, 0, 0.2, 1)';
                     }
                 });
             }
         }
-
-        function handleDragLeave(e) { }
 
         function handleDrop(e) {
             e.stopPropagation(); 
@@ -720,7 +653,6 @@
             item.addEventListener('dragstart', handleDragStart);
             item.addEventListener('dragenter', handleDragEnter);
             item.addEventListener('dragover', handleDragOver);
-            item.addEventListener('dragleave', handleDragLeave);
             item.addEventListener('drop', handleDrop);
             item.addEventListener('dragend', handleDragEnd);
         }
