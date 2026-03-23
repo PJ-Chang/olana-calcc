@@ -68,7 +68,7 @@
         .sidebar-spacer.open { width: 350px; }
         @media (max-width: 900px) { .sidebar-spacer.open { width: 0; } }
 
-        /* 左側收合選單 (記事本) - 調整 z-index 確保在最前面 */
+        /* 左側收合選單 (記事本) */
         .sidebar {
             background: #ffffff; border-radius: 12px; box-shadow: var(--box-shadow);
             width: 330px; max-width: 85vw; padding: 25px; 
@@ -224,7 +224,7 @@
                         <option value="custom">自訂匯率 ⚙️</option>
                     </select>
                     <div id="customRateContainer" style="display: none; margin-top: 10px;">
-                        <input type="number" id="customRate" placeholder="輸入匯率" style="width: 100%;" oninput="calculateItemPrice()" inputmode="decimal">
+                        <input type="number" id="customRate" placeholder="輸入自訂除數 (例如: 40)" style="width: 100%;" oninput="calculateItemPrice()" inputmode="decimal">
                     </div>
                 </div>
 
@@ -292,6 +292,7 @@
     <script>
         window.addEventListener('DOMContentLoaded', () => {
             loadFromStorage();
+            loadSettings(); // 載入儲存的匯率設定
             
             const btn = document.getElementById('viewSwitchBtn');
             if (window.innerWidth <= 900) {
@@ -310,6 +311,26 @@
                 });
             });
         });
+
+        // 儲存與載入設定的函數
+        function saveSettings() {
+            localStorage.setItem('olanaCurrency', document.getElementById('currency').value);
+            localStorage.setItem('olanaCustomRate', document.getElementById('customRate').value);
+        }
+
+        function loadSettings() {
+            const savedCurrency = localStorage.getItem('olanaCurrency');
+            const savedRate = localStorage.getItem('olanaCustomRate');
+
+            if (savedCurrency) {
+                document.getElementById('currency').value = savedCurrency;
+            }
+            if (savedRate) {
+                document.getElementById('customRate').value = savedRate;
+            }
+            // 觸發 UI 更新
+            toggleCustomRate();
+        }
 
         function toggleViewMode() {
             const body = document.body;
@@ -366,6 +387,8 @@
                 customContainer.style.display = 'none';
                 priceLabel.innerText = '2. 商品原價 (₩)';
             }
+            
+            saveSettings(); // 儲存幣別選項
             calculateItemPrice();
             document.getElementById('saveBtn').disabled = true;
         }
@@ -382,6 +405,7 @@
                 itemPriceTWD = Math.round(price / rate);
             }
             
+            saveSettings(); // 即時儲存輸入的匯率
             document.getElementById('itemPriceDisplay').innerText = '= ' + itemPriceTWD + ' 元';
         }
 
