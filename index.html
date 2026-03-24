@@ -178,13 +178,13 @@
         let isSyncLocked = false;
 
         function syncToCloud(mode, dataArray) {
-            isSyncLocked = true;
+            isSyncLocked = true; 
             fetch(API_URL, {
                 method: 'POST',
                 body: JSON.stringify({ mode: mode, data: dataArray }),
                 headers: { 'Content-Type': 'text/plain;charset=utf-8' }
             }).then(() => {
-                setTimeout(() => { isSyncLocked = false; }, 2000);
+                setTimeout(() => { isSyncLocked = false; }, 4000);
             }).catch(err => { 
                 console.log("雲端同步失敗", err);
                 isSyncLocked = false;
@@ -265,13 +265,12 @@
         function saveToSidebar_kr() {
             const name = document.getElementById('quoteName_kr').value.trim();
             if(!name) return alert("請輸入報價名稱");
-            renderSavedItem_kr('save_kr_'+Date.now(), name, "成本："+document.getElementById('resCost_kr').innerText, "賣價："+document.getElementById('resTotal_kr').innerText, true);
+            const id = 'save_kr_' + Date.now();
+            renderSavedItem_kr(id, name, "成本："+document.getElementById('resCost_kr').innerText, "賣價："+document.getElementById('resTotal_kr').innerText, true);
             document.getElementById('emptyMsg_kr').style.display = 'none';
             document.getElementById('quoteName_kr').value = '';
-            
             if (!document.getElementById('sidebar_kr').classList.contains('open')) toggleSidebar_kr();
             document.getElementById('saveBtn_kr').disabled = true;
-            
             saveOrderToStorage_kr();
         }
         function renderSavedItem_kr(id, name, cost, total, prepend) {
@@ -299,7 +298,7 @@
                 });
                 localStorage.setItem('olanaQuotes', JSON.stringify(items));
                 syncToCloud('kr', items); 
-            }, 10);
+            }, 0);
         }
         
         function toggleSidebar_kr() { document.getElementById('sidebar_kr').classList.toggle('open'); document.getElementById('sidebarSpacer_kr').classList.toggle('open'); document.getElementById('historyBtn_kr').classList.toggle('hidden'); }
@@ -324,6 +323,7 @@
             fetch(API_URL + "?t=" + new Date().getTime(), { cache: 'no-store' })
                 .then(res => res.json())
                 .then(data => {
+                    if (isSyncLocked) return;
                     const isEditing = document.activeElement && document.activeElement.classList.contains('editable-text');
                     if (data.kr) {
                         const newKrStr = JSON.stringify(data.kr);
@@ -340,6 +340,9 @@
         }
 
         window.addEventListener('DOMContentLoaded', () => {
+            document.body.className = 'theme-kr';
+            document.getElementById('app-kr').classList.add('active');
+
             if (window.innerWidth > 900) {
                 document.body.classList.add('force-desktop');
                 document.getElementById('viewportMeta').setAttribute('content', 'width=1100');
@@ -366,14 +369,9 @@
             if (e.key === 'Enter') {
                 const activeEl = document.activeElement;
                 if (activeEl.classList.contains('editable-text')) return;
-                
                 if(activeEl.id === 'quoteName_kr') {
-                    if(!document.getElementById('saveBtn_kr').disabled) {
-                        saveToSidebar_kr(); 
-                    }
-                } else { 
-                    calculateTotal_kr(); 
-                } 
+                    if(!document.getElementById('saveBtn_kr').disabled) { saveToSidebar_kr(); }
+                } else { calculateTotal_kr(); } 
             }
         });
     </script>
