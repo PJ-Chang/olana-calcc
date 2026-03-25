@@ -3,9 +3,9 @@
 <head>
     <meta charset="UTF-8">
     <meta id="viewportMeta" name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no"> 
-    <title>OLANA - 韓國代購</title>
+    <title>OLANA</title>
     <style>
-        /* ================= 變數與主題 (完全不動) ================= */
+        /* ================= 變數與主題 ================= */
         body.theme-kr {
             --brand-primary: #B5835A;   
             --brand-primary-hover: #966A45; 
@@ -71,30 +71,40 @@
         .sidebar-header h3 { margin: 0; font-size: 18px; color: #4A4036; font-weight: bold; }
         .close-btn { cursor: pointer; color: var(--brand-primary); font-size: 20px; }
         .saved-list-container { flex: 1; overflow-y: auto; }
+        
         .editable-text { outline: none; padding: 2px 4px; border-radius: 4px; transition: background 0.2s; }
         .editable-text:focus { background: #f0f0f0; border-bottom: 1px dashed var(--brand-primary); }
+        
         .saved-item { background: #FCFAFA; border: 1px solid #E0D8D0; border-radius: 12px; padding: 15px; margin-bottom: 15px; position: relative; display: flex; align-items: flex-start; gap: 12px; box-sizing: border-box; }
-        .item-content { flex: 1; display: flex; flex-direction: column; position: relative; text-align: left; }
-        .quote-name { font-size: 18px; color: #4A4036; display: block; margin-bottom: 4px; font-weight: bold; }
+        .item-content { flex: 1; display: flex; flex-direction: column; gap: 6px; text-align: left; overflow: hidden; }
+        
+        .item-title-row { display: flex; justify-content: space-between; align-items: flex-start; flex-wrap: wrap; gap: 10px; width: 100%; }
+        .quote-name { font-size: 14px !important; color: #4A4036; flex: 1; min-width: 120px; word-break: break-all; font-weight: bold; }
+        
+        .item-price-row { display: flex; flex-direction: column; gap: 4px; }
         .quote-cost { font-size: 14px; color: #9A8C7F; display: block; }
-        .quote-total { font-size: 18px; color: var(--brand-primary); font-weight: bold; display: block; margin-top: 5px; }
-        .copy-btn { color: #D5C9BE; position: absolute; right: 30px; top: 0px; cursor: pointer; font-size: 16px; }
-        .del-btn { color: var(--brand-primary); position: absolute; right: 0px; top: 0px; cursor: pointer; font-size: 16px; }
+        
+        .sell-profit-group { display: flex; align-items: center; gap: 12px; }
+        .quote-total { font-size: 16px; color: var(--brand-primary); font-weight: bold; }
+        
+        .quote-profit-label { font-size: 16px; color: #666; font-weight: normal; }
+        .quote-profit-val { font-size: 16px; color: #2e7d32; font-weight: bold; }
+
+        .item-action-btns { display: flex; gap: 8px; flex-shrink: 0; margin-left: auto; }
+        .copy-btn, .del-btn { cursor: pointer; font-size: 16px; transition: opacity 0.2s; }
+        .copy-btn { color: #D5C9BE; }
+        .del-btn { color: var(--brand-primary); }
+        
         .drag-handle { color: #D5C9BE; cursor: grab; font-size: 20px; user-select: none; }
 
         /* ================= 主要計算機 ================= */
         .main-container { display: flex; gap: 25px; width: 100%; max-width: 900px; flex-wrap: wrap; justify-content: center; margin-top: 50px; transition: all 0.3s ease; }
-        
         body.force-mobile .main-container { flex-direction: column !important; align-items: center !important; max-width: 450px !important; }
         body.force-desktop .main-container { flex-direction: row !important; flex-wrap: nowrap !important; max-width: 900px !important; align-items: flex-start !important; }
-
         .calculator, .result { background: #ffffff; padding: 35px; border-radius: 12px; box-shadow: var(--box-shadow); flex: 1; min-width: 320px; box-sizing: border-box; }
-
         h2, h3 { text-align: center; margin-top: 0; color: var(--brand-text); width: 100%; font-size: 24px; font-weight: 800; margin-bottom: 25px; }
         h2::before, h3::before { content: "▫️ "; font-size: 14px; color: var(--brand-primary); }
-
         @media (max-width: 480px) { h2 { font-size: 20px !important; white-space: nowrap !important; letter-spacing: -0.5px; } }
-
         .input-group { margin-bottom: 20px; text-align: left; }
         label { display: block; margin-bottom: 8px; font-weight: 600; font-size: 14.5px; color: var(--brand-text); }
         input[type="number"], select, input[type="text"] { width: 100%; padding: 12px; border: 1px solid #E0D8D0; border-radius: 6px; box-sizing: border-box; font-size: 16px; height: 46px; background-color: #FCFAFA; }
@@ -192,7 +202,6 @@
         }
 
         let lastScrollTop = 0;
-
         window.addEventListener('scroll', () => {
             let st = window.pageYOffset || document.documentElement.scrollTop;
             const historyBtnKr = document.getElementById('historyBtn_kr');
@@ -241,11 +250,9 @@
             document.getElementById('resTotal_kr').innerText = total + ' 元';
             document.getElementById('resultBox_kr').classList.remove('waiting');
             document.getElementById('saveBtn_kr').disabled = false;
-            
             const resBox = document.getElementById('resultBox_kr');
             resBox.classList.remove('result-animate');
-            void resBox.offsetWidth; 
-            resBox.classList.add('result-animate');
+            void resBox.offsetWidth; resBox.classList.add('result-animate');
             setTimeout(() => { resBox.scrollIntoView({ behavior: 'smooth', block: 'center' }); }, 100);
         }
 
@@ -261,7 +268,21 @@
                 btn.innerHTML = '📱 手機版';
             }
         }
-        
+
+        function getProfit(costStr, totalStr) {
+            const c = parseInt(costStr.replace(/[^0-9]/g, '')) || 0;
+            const t = parseInt(totalStr.replace(/[^0-9]/g, '')) || 0;
+            return t - c;
+        }
+
+        function updateProfitDisplay(el) {
+            const card = el.closest('.saved-item');
+            const costStr = card.querySelector('.quote-cost').textContent;
+            const totalStr = card.querySelector('.quote-total').textContent;
+            const profitVal = getProfit(costStr, totalStr);
+            card.querySelector('.quote-profit-val').textContent = profitVal;
+        }
+
         function saveToSidebar_kr() {
             const name = document.getElementById('quoteName_kr').value.trim();
             if(!name) return alert("請輸入報價名稱");
@@ -273,36 +294,44 @@
             document.getElementById('saveBtn_kr').disabled = true;
             saveOrderToStorage_kr();
         }
+
         function renderSavedItem_kr(id, name, cost, total, prepend) {
+            const profit = getProfit(cost, total);
             const div = document.createElement('div'); div.className = 'saved-item'; div.id = id;
-            div.innerHTML = `<div class="drag-handle">☰</div><div class="item-content"><span class="copy-btn" onclick="copyItem('${id}')">📄</span><span class="del-btn" onclick="deleteItem_kr('${id}')">✖</span><strong class="editable-text quote-name" contenteditable="true" onblur="saveOrderToStorage_kr()" onkeydown="handleEnter(event)">${name}</strong><span class="editable-text quote-cost" contenteditable="true" onblur="saveOrderToStorage_kr()" onkeydown="handleEnter(event)">${cost}</span><span class="editable-text quote-total" contenteditable="true" onblur="saveOrderToStorage_kr()" onkeydown="handleEnter(event)">${total}</span></div>`;
+            div.innerHTML = `
+                <div class="drag-handle">☰</div>
+                <div class="item-content">
+                    <div class="item-title-row">
+                        <strong class="editable-text quote-name" contenteditable="true" onblur="saveOrderToStorage_kr()" onkeydown="handleEnter(event)">${name}</strong>
+                        <div class="item-action-btns">
+                            <span class="copy-btn" onclick="copyItem('${id}')">📄</span>
+                            <span class="del-btn" onclick="deleteItem_kr('${id}')">✖</span>
+                        </div>
+                    </div>
+                    <div class="item-price-row">
+                        <span class="editable-text quote-cost" contenteditable="true" oninput="updateProfitDisplay(this)" onblur="saveOrderToStorage_kr()" onkeydown="handleEnter(event)">${cost}</span>
+                        <div class="sell-profit-group">
+                            <span class="editable-text quote-total" contenteditable="true" oninput="updateProfitDisplay(this)" onblur="saveOrderToStorage_kr()" onkeydown="handleEnter(event)">${total}</span>
+                            <span class="quote-profit-label">利潤：<span class="quote-profit-val">${profit}</span></span>
+                        </div>
+                    </div>
+                </div>`;
             const list = document.getElementById('savedList_kr');
             if(prepend) list.insertBefore(div, list.firstChild); else list.appendChild(div);
         }
-        function deleteItem_kr(id) { 
-            document.getElementById(id).remove(); 
-            if(document.querySelectorAll('#app-kr .saved-item').length === 0) document.getElementById('emptyMsg_kr').style.display = 'block'; 
-            saveOrderToStorage_kr(); 
-        }
-        
+
+        function toggleSidebar_kr() { document.getElementById('sidebar_kr').classList.toggle('open'); document.getElementById('sidebarSpacer_kr').classList.toggle('open'); document.getElementById('historyBtn_kr').classList.toggle('hidden'); }
+        function deleteItem_kr(id) { document.getElementById(id).remove(); if(document.querySelectorAll('#app-kr .saved-item').length === 0) document.getElementById('emptyMsg_kr').style.display = 'block'; saveOrderToStorage_kr(); }
         function saveOrderToStorage_kr() {
             setTimeout(() => {
                 const items = [];
                 document.querySelectorAll('#app-kr .saved-item').forEach(el => { 
-                    items.push({ 
-                        id: el.id, 
-                        name: el.querySelector('.quote-name').textContent, 
-                        cost: el.querySelector('.quote-cost').textContent, 
-                        total: el.querySelector('.quote-total').textContent 
-                    }); 
+                    items.push({ id: el.id, name: el.querySelector('.quote-name').textContent, cost: el.querySelector('.quote-cost').textContent, total: el.querySelector('.quote-total').textContent }); 
                 });
                 localStorage.setItem('olanaQuotes', JSON.stringify(items));
                 syncToCloud('kr', items); 
             }, 0);
         }
-        
-        function toggleSidebar_kr() { document.getElementById('sidebar_kr').classList.toggle('open'); document.getElementById('sidebarSpacer_kr').classList.toggle('open'); document.getElementById('historyBtn_kr').classList.toggle('hidden'); }
-        
         function copyItem(id) {
             const el = document.getElementById(id);
             const text = `${el.querySelector('.quote-name').textContent}\n${el.querySelector('.quote-cost').textContent}\n${el.querySelector('.quote-total').textContent}`;
@@ -312,11 +341,7 @@
         let isTypingIME = false;
         document.addEventListener('compositionstart', () => { isTypingIME = true; });
         document.addEventListener('compositionend', () => { isTypingIME = false; });
-
-        function handleEnter(e) { 
-            if (isTypingIME || e.isComposing || e.keyCode === 229) return; 
-            if (e.key === 'Enter') { e.preventDefault(); e.target.blur(); } 
-        }
+        function handleEnter(e) { if (isTypingIME || e.isComposing || e.keyCode === 229) return; if (e.key === 'Enter') { e.preventDefault(); e.target.blur(); } }
 
         function fetchCloudDataBackground() {
             if (isSyncLocked) return;
@@ -340,26 +365,19 @@
         }
 
         window.addEventListener('DOMContentLoaded', () => {
-            document.body.className = 'theme-kr';
-            document.getElementById('app-kr').classList.add('active');
-
             if (window.innerWidth > 900) {
                 document.body.classList.add('force-desktop');
                 document.getElementById('viewportMeta').setAttribute('content', 'width=1100');
                 document.getElementById('viewSwitchBtn_kr').innerHTML = '📱 手機版';
             }
-
             const krData = JSON.parse(localStorage.getItem('olanaQuotes') || '[]');
             krData.forEach(q => renderSavedItem_kr(q.id, q.name, q.cost, q.total, false));
             if(krData.length > 0) document.getElementById('emptyMsg_kr').style.display = 'none';
-
             const rateKrType = localStorage.getItem('olanaRateType');
             const customKrVal = localStorage.getItem('olanaCustomRate');
             if(rateKrType) { document.getElementById('currency_kr').value = rateKrType; }
             if(customKrVal) { document.getElementById('customRate_kr').value = customKrVal; }
-            
             toggleCustomRate_kr();
-
             fetchCloudDataBackground();
             setInterval(fetchCloudDataBackground, 5000);
         });
@@ -369,9 +387,11 @@
             if (e.key === 'Enter') {
                 const activeEl = document.activeElement;
                 if (activeEl.classList.contains('editable-text')) return;
-                if(activeEl.id === 'quoteName_kr') {
-                    if(!document.getElementById('saveBtn_kr').disabled) { saveToSidebar_kr(); }
-                } else { calculateTotal_kr(); } 
+                if(activeEl.id === 'quoteName_kr') { 
+                    if(!document.getElementById('saveBtn_kr').disabled) saveToSidebar_kr(); 
+                } else { 
+                    calculateTotal_kr(); 
+                } 
             }
         });
     </script>
