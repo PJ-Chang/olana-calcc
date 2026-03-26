@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta id="viewportMeta" name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no"> 
-    <title>OLANA</title>
+    <title>OLANA 嚴選代購</title>
     <style>
         /* ================= 變數與主題 ================= */
         body.theme-kr {
@@ -75,21 +75,27 @@
         .editable-text { outline: none; padding: 2px 4px; border-radius: 4px; transition: background 0.2s; }
         .editable-text:focus { background: #f0f0f0; border-bottom: 1px dashed var(--brand-primary); }
         
+        /* 調整卡片內部佈局 */
         .saved-item { background: #FCFAFA; border: 1px solid #E0D8D0; border-radius: 12px; padding: 15px; margin-bottom: 15px; position: relative; display: flex; align-items: flex-start; gap: 12px; box-sizing: border-box; }
         .item-content { flex: 1; display: flex; flex-direction: column; gap: 6px; text-align: left; overflow: hidden; }
         
+        /* 報價名稱列 */
         .item-title-row { display: flex; justify-content: space-between; align-items: flex-start; flex-wrap: wrap; gap: 10px; width: 100%; }
         .quote-name { font-size: 14px !important; color: #4A4036; flex: 1; min-width: 120px; word-break: break-all; font-weight: bold; }
         
+        /* 價格列佈局：確保成本與賣價上下切齊 */
         .item-price-row { display: flex; flex-direction: column; gap: 4px; }
         .quote-cost { font-size: 14px; color: #9A8C7F; display: block; }
         
+        /* 賣價與利潤在同一行 */
         .sell-profit-group { display: flex; align-items: center; gap: 12px; }
         .quote-total { font-size: 16px; color: var(--brand-primary); font-weight: bold; }
         
+        /* 利潤欄位樣式 */
         .quote-profit-label { font-size: 16px; color: #666; font-weight: normal; }
         .quote-profit-val { font-size: 16px; color: #2e7d32; font-weight: bold; }
 
+        /* 按鈕群組 */
         .item-action-btns { display: flex; gap: 8px; flex-shrink: 0; margin-left: auto; }
         .copy-btn, .del-btn { cursor: pointer; font-size: 16px; transition: opacity 0.2s; }
         .copy-btn { color: #D5C9BE; }
@@ -153,8 +159,27 @@
             <div class="main-container">
                 <div class="calculator">
                     <h2>OLANA 嚴選代購</h2>
-                    <div class="input-group"><label>1. 商品幣別</label><select id="currency_kr" onchange="toggleCustomRate_kr()"><option value="42">韓幣 ₩ : 韓幣原價 ÷ 42</option><option value="custom">自訂匯率⚙️</option></select>
-                    <div id="customRateContainer_kr" style="display: none; margin-top: 10px;"><input type="number" id="customRate_kr" placeholder="輸入匯率" oninput="calculateItemPrice_kr()" inputmode="decimal"></div></div>
+                    
+                    <div class="input-group">
+                        <label>1. 商品幣別</label>
+                        <div style="display: flex; gap: 8px;">
+                            <select id="currency_kr" onchange="toggleCustomRate_kr()" style="flex: 1;">
+                                <option value="42">韓幣 ₩ : 青瓦台 韓幣原價÷42</option>
+                                <option value="43">韓幣 ₩ : 歐膩買手 韓幣原價÷43</option>
+                                <option value="custom">自訂匯率⚙️</option>
+                            </select>
+                            <select id="kr_extra_fee" onchange="calculateItemPrice_kr()" style="flex: 1; display: none;">
+                                <option value="" disabled selected>請選擇...</option>
+                                <option value="1.10">線下統一 +10%</option>
+                                <option value="1.02">線上買 +2%</option>
+                                <option value="1.03">線上要搶 +3%</option>
+                            </select>
+                        </div>
+                        <div id="customRateContainer_kr" style="display: none; margin-top: 10px;">
+                            <input type="number" id="customRate_kr" placeholder="輸入匯率" oninput="calculateItemPrice_kr()" inputmode="decimal">
+                        </div>
+                    </div>
+                    
                     <div class="input-group"><label id="priceLabel_kr">2. 商品原價 (₩)</label><div class="inline-calc-container"><input type="number" id="price_kr" placeholder="輸入韓幣原價" oninput="calculateItemPrice_kr()" inputmode="decimal"><span id="itemPriceDisplay_kr" class="inline-calc-result">= 0 元</span></div></div>
                     <div class="input-group">
                         <label>3. 利潤</label>
@@ -170,7 +195,7 @@
                 </div>
                 <div class="result waiting" id="resultBox_kr">
                     <h3>📝 報價明細 (台幣)</h3>
-                    <p><span>商品折合台幣：</span> <span id="resItemPrice_kr">0 元</span></p>
+                    <p><span id="resItemPriceLabel_kr">商品折合台幣：</span> <span id="resItemPrice_kr">0 元</span></p>
                     <p><span>國際運費：</span> <span id="resIntlShipping_kr">0 元</span></p>
                     <p><span>台灣運費：</span> <span id="resLocalShipping_kr">0 元</span></p>
                     <p><span>利潤：</span> <span id="resServiceFee_kr">0 元</span></p>
@@ -215,33 +240,73 @@
             const val = document.getElementById('currency_kr').value;
             const isCustom = val === 'custom';
             document.getElementById('customRateContainer_kr').style.display = isCustom ? 'block' : 'none';
+            
+            // 只有選擇 43 歐膩買手時，才顯示右側選單
+            const extraFeeEl = document.getElementById('kr_extra_fee');
+            extraFeeEl.style.display = (val === '43') ? 'block' : 'none';
+            if (val !== '43') {
+                extraFeeEl.value = ""; // 隱藏時重置為預設
+            }
+            
             localStorage.setItem('olanaRateType', val);
             calculateItemPrice_kr();
         }
+        
         function calculateItemPrice_kr() {
             const price = parseFloat(document.getElementById('price_kr').value) || 0;
             const rateType = document.getElementById('currency_kr').value;
             const customInput = document.getElementById('customRate_kr');
-            const rate = rateType === 'custom' ? (parseFloat(customInput.value) || 1) : 42;
+            const rate = rateType === 'custom' ? (parseFloat(customInput.value) || 1) : parseFloat(rateType);
             if(rateType === 'custom') { localStorage.setItem('olanaCustomRate', customInput.value); }
-            document.getElementById('itemPriceDisplay_kr').innerText = '= ' + Math.round(price / rate) + ' 元';
+            
+            // 確保只有選中 43 時才會套用右側附加 % 數
+            const extraFeeMultiplier = rateType === '43' ? (parseFloat(document.getElementById('kr_extra_fee').value) || 1) : 1;
+            
+            document.getElementById('itemPriceDisplay_kr').innerText = '= ' + Math.round((price / rate) * extraFeeMultiplier) + ' 元';
         }
+        
         function calculateWeightFee_kr() {
             const weight = parseFloat(document.getElementById('weight_kr').value) || 0;
             document.getElementById('weightFeeDisplay_kr').innerText = '= ' + Math.round(weight * 0.19) + ' 元';
         }
+        
         function calculateTotal_kr() {
             const price = parseFloat(document.getElementById('price_kr').value) || 0;
-            const rate = document.getElementById('currency_kr').value === 'custom' ? (parseFloat(document.getElementById('customRate_kr').value) || 1) : 42;
+            const rateType = document.getElementById('currency_kr').value;
+            const extraFeeEl = document.getElementById('kr_extra_fee');
+            
+            // 防呆機制：若選了 43 但未選擇附加費率，則阻擋計算並提示
+            if (rateType === '43' && !extraFeeEl.value) {
+                alert("防呆提示：請選擇附加費率 (線下/線上)！");
+                return;
+            }
+            
+            const rate = rateType === 'custom' ? (parseFloat(document.getElementById('customRate_kr').value) || 1) : parseFloat(rateType);
             const feeType = document.querySelector('input[name="feeType_kr"]:checked').value;
             const serviceInput = parseFloat(document.getElementById('serviceFee_kr').value) || 0;
             const weight = parseFloat(document.getElementById('weight_kr').value) || 0;
             const local = parseFloat(document.getElementById('localShipping_kr').value) || 0;
-            let itemTWD = Math.round(price / rate);
+            
+            // 確保只有選中 43 時才會套用右側附加 % 數
+            const extraFeeMultiplier = rateType === '43' ? (parseFloat(extraFeeEl.value) || 1) : 1;
+            
+            let itemTWD = Math.round((price / rate) * extraFeeMultiplier);
             let intlTWD = Math.round(weight * 0.19);
             let serviceTWD = (feeType === 'percent') ? Math.round(itemTWD * (serviceInput / 100)) : serviceInput;
             const cost = itemTWD + intlTWD + local;
             const total = cost + serviceTWD;
+            
+            // 動態更新報價明細標題
+            let labelText = "商品折合台幣：";
+            if (rateType === '43') {
+                labelText = `商品折合台幣 (${extraFeeEl.options[extraFeeEl.selectedIndex].text})：`;
+            } else if (rateType === '42') {
+                labelText = `商品折合台幣 (青瓦台)：`;
+            } else {
+                labelText = `商品折合台幣 (自訂匯率)：`;
+            }
+            document.getElementById('resItemPriceLabel_kr').innerText = labelText;
+            
             document.getElementById('resItemPrice_kr').innerText = itemTWD + ' 元';
             document.getElementById('resIntlShipping_kr').innerText = intlTWD + ' 元';
             document.getElementById('resLocalShipping_kr').innerText = local + ' 元';
@@ -254,6 +319,12 @@
             resBox.classList.remove('result-animate');
             void resBox.offsetWidth; resBox.classList.add('result-animate');
             setTimeout(() => { resBox.scrollIntoView({ behavior: 'smooth', block: 'center' }); }, 100);
+            
+            // 每算一次要選一次防呆機制：算完後將下拉選單重置為空白
+            if (rateType === '43') {
+                extraFeeEl.value = "";
+                calculateItemPrice_kr(); // 更新行內預覽
+            }
         }
 
         function toggleViewMode_kr() {
@@ -269,6 +340,10 @@
             }
         }
 
+        /* -------------------------------------------
+            核心修改：垂直切齊佈局與利潤顯示
+        ------------------------------------------- */
+        
         function getProfit(costStr, totalStr) {
             const c = parseInt(costStr.replace(/[^0-9]/g, '')) || 0;
             const t = parseInt(totalStr.replace(/[^0-9]/g, '')) || 0;
@@ -321,7 +396,9 @@
         }
 
         function toggleSidebar_kr() { document.getElementById('sidebar_kr').classList.toggle('open'); document.getElementById('sidebarSpacer_kr').classList.toggle('open'); document.getElementById('historyBtn_kr').classList.toggle('hidden'); }
+        
         function deleteItem_kr(id) { document.getElementById(id).remove(); if(document.querySelectorAll('#app-kr .saved-item').length === 0) document.getElementById('emptyMsg_kr').style.display = 'block'; saveOrderToStorage_kr(); }
+        
         function saveOrderToStorage_kr() {
             setTimeout(() => {
                 const items = [];
@@ -332,6 +409,7 @@
                 syncToCloud('kr', items); 
             }, 0);
         }
+        
         function copyItem(id) {
             const el = document.getElementById(id);
             const text = `${el.querySelector('.quote-name').textContent}\n${el.querySelector('.quote-cost').textContent}\n${el.querySelector('.quote-total').textContent}`;
@@ -373,6 +451,7 @@
             const krData = JSON.parse(localStorage.getItem('olanaQuotes') || '[]');
             krData.forEach(q => renderSavedItem_kr(q.id, q.name, q.cost, q.total, false));
             if(krData.length > 0) document.getElementById('emptyMsg_kr').style.display = 'none';
+            
             const rateKrType = localStorage.getItem('olanaRateType');
             const customKrVal = localStorage.getItem('olanaCustomRate');
             if(rateKrType) { document.getElementById('currency_kr').value = rateKrType; }
